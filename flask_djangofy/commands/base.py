@@ -3,7 +3,7 @@ import sys
 
 from termcolor import cprint
 
-from flask_djangofy.core import ImproperlyConfigured
+from flask_djangofy.core.exceptions import ImproperlyConfigured
 
 NO_COMMAND_ERROR = """
 Unknown command: '{operation}'

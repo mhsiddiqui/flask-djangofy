@@ -7,7 +7,7 @@ from flask_djangofy.core.exceptions import CommandError
 from flask_djangofy.utils import ImportUtil
 
 import flask_djangofy
-from flask_djangofy.commands import NO_COMMAND_ERROR
+from flask_djangofy.commands.base import NO_COMMAND_ERROR
 from flask_djangofy.commands import ShowHelp
 
 
