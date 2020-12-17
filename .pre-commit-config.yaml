@@ -1,0 +1,15 @@
+-   repo: https://github.com/asottile/seed-isort-config
+    rev: v1.9.1
+    hooks:
+    -   id: seed-isort-config
+-   repo: https://github.com/pre-commit/mirrors-isort
+    rev: v4.3.21
+    hooks:
+    -   id: isort
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3  # Use the ref you want to point at
+    hooks:
+    -   id: check-merge-conflict
+    -   id: end-of-file-fixer
+    -   id: flake8
+        args: [--max-line-length=123, '--ignore=E722,W504']

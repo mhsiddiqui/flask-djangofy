@@ -1,0 +1,14 @@
+site_name: flask-djangofy
+theme: readthedocs
+edit_uri: https://github.com/mhsiddiqui/flask-djangofy/tree/master/docs
+repo_url: https://github.com/mhsiddiqui/flask-djangofy/
+repo_name: Github
+site_author: Muhammad Hassan Siddiqui
+nav:
+    - Home: index.md
+    - Setup: installation.md
+    - Commands: cmd.md
+    - Views: views.md
+    - Initializers: initializers.md
+    - ToDos: todo.md
+    - Releases: releases.md

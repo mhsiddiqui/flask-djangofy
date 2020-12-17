@@ -1,0 +1,22 @@
+Metadata-Version: 1.1
+Name: flask-djangofy
+Version: 0.1.0
+Summary: Flask Project Just like Django
+Home-page: https://github.com/mhsiddiqui/flask-djangofy
+Author: M Hassan Siddiqui
+Author-email: mhassan.eeng@gmail.com
+License: BSD License
+Description: flask-djangofy is a library which enable you write your flask app just like Django app. You will make urls just like Django, define settings just like Django. You will make project structure just like Django where you will have multiple apps against your each module and define urls for each app separately. 
+        
+        1. URLS
+        2. Views
+        3. Models
+        4. Runserver
+        5. WSGI/ASGI
+Platform: UNKNOWN
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Framework :: Flask

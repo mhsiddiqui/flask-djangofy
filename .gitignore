@@ -1,0 +1,15 @@
+__pycache__/
+envname/
+venv/
+.idea/
+.DS_Store
+*.html
+*.pyc
+*.egg-info/*
+*.swp
+build
+dist
+django_error_report.egg-info
+
+^dist/
+^build/
