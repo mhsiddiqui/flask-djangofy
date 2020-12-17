@@ -38,8 +38,8 @@ class BaseCommand(object):
         "examples": ["python manage.py operation args"]
     }
 
-    def __init__(self, command=None, *args, **kwargs):
-        self.command = command
+    def __init__(self, *args, **kwargs):
+        self.command = kwargs.pop('command', None)
         self.args = args
         self.kwargs = kwargs
         for key, value in kwargs.items():

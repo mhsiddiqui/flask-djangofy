@@ -27,6 +27,7 @@ class ManagementUtility(object):
         """
         try:
             self.operation = self.argv[1]
+            self.argv.append('--command={}'.format(self.operation))
         except IndexError:
             pass
 
@@ -46,6 +47,7 @@ class ManagementUtility(object):
             usage='manage.py operation [options] [args]',
             add_help=False, allow_abbrev=False
         )
+        argument_parser.add_argument('--command')
         argument_parser.add_argument('--settings')
         argument_parser.add_argument('--pythonpath')
         actions = settings.CMD_ACTIONS
@@ -67,7 +69,7 @@ class ManagementUtility(object):
         if not command_function:
             raise CommandError
         operation_class = ImportUtil(command_function, key_type='class').get()
-        op_class = operation_class(command=self.operation, *args, **options)
+        op_class = operation_class(*args, **options)
         if op_class.is_valid():
             op_class.execute()
 
