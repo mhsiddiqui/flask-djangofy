@@ -5,8 +5,7 @@ import sys
 import flask_djangofy
 from flask_djangofy.conf import settings
 from flask_djangofy.core.exceptions import CommandError, ImproperlyConfigured
-from flask_djangofy.core.management.base import handle_default_options
-from flask_djangofy.core.management.commands import NO_COMMAND_ERROR
+from flask_djangofy.core.management.base import handle_default_options, NO_COMMAND_ERROR
 from flask_djangofy.core.management.commands import ShowHelp
 from flask_djangofy.utils import ImportUtil
 
