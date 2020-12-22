@@ -2,7 +2,7 @@ import os
 
 from jinja2 import Template
 
-from flask_djangofy.commands.base import BaseCommand
+from flask_djangofy.core.management.commands import BaseCommand
 
 
 class TemplateCommand(BaseCommand):

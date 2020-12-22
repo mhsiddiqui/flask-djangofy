@@ -1,10 +1,10 @@
 import sys
 
-from flask_djangofy.utils import ImportUtil
 from termcolor import cprint
 
 from flask_djangofy.conf import settings
-from .base import BaseCommand, HELP_COMMAND
+from flask_djangofy.core.management.base import BaseCommand, HELP_COMMAND
+from flask_djangofy.utils import ImportUtil
 
 
 class ShowHelp(BaseCommand):

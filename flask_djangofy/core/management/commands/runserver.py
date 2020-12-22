@@ -1,8 +1,7 @@
 from flask_djangofy.conf import settings
-from flask_djangofy.utils import ImportUtil
-
 from flask_djangofy.conf.global_settings import DEFAULT_HOST, DEFAULT_PORT
-from .base import BaseCommand, BaseArgument
+from flask_djangofy.core.management.base import BaseCommand, BaseArgument
+from flask_djangofy.utils import ImportUtil
 
 
 class RunServer(BaseCommand):

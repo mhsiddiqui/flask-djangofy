@@ -5,7 +5,7 @@ INITIALIZERS = [
 ]
 
 CMD_ACTIONS = {
-    'runserver': 'flask_djangofy.commands.RunServer',
+    'runserver': 'flask_djangofy.core.management.commands.RunServer',
     # 'startproject': 'flask_djangofy.cmd.StartProject',
     # 'startapp': 'flask_djangofy.cmd.StartApp'
 }

@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 from termcolor import cprint
@@ -119,3 +120,15 @@ class BaseArgument(object):
             'required': self.required
         }
         return args, kwargs
+
+
+def handle_default_options(options):
+    """
+    Include any default options that all commands should accept here
+    so that ManagementUtility can handle them before searching for
+    user commands.
+    """
+    if options.settings:
+        os.environ['APP_SETTINGS_MODULE'] = options.settings
+    if options.pythonpath:
+        sys.path.insert(0, options.pythonpath)

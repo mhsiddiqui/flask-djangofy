@@ -2,13 +2,13 @@ import argparse
 import os
 import sys
 
-from flask_djangofy.conf import settings
-from flask_djangofy.core.exceptions import CommandError
-from flask_djangofy.utils import ImportUtil
-
 import flask_djangofy
-from flask_djangofy.commands.base import NO_COMMAND_ERROR
-from flask_djangofy.commands import ShowHelp
+from flask_djangofy.conf import settings
+from flask_djangofy.core.exceptions import CommandError, ImproperlyConfigured
+from flask_djangofy.core.management.base import handle_default_options
+from flask_djangofy.core.management.commands import NO_COMMAND_ERROR
+from flask_djangofy.core.management.commands import ShowHelp
+from flask_djangofy.utils import ImportUtil
 
 
 class ManagementUtility(object):
@@ -78,16 +78,32 @@ class ManagementUtility(object):
         Execute a command
         """
         self.__set_operation()
-        flask_djangofy.setup()
         parser = self.__get_argument_parser()
-        if self.operation != 'help':
-            try:
-                options, args = parser.parse_known_args(self.argv[2:])
-                self.__execute_command(*args, **vars(options))
-            except CommandError:
-                self.__no_command_error()
-        else:
-            ShowHelp(arg_parser=parser).run()
+        try:
+            options, args = parser.parse_known_args(self.argv[2:])
+            handle_default_options(options)
+        except CommandError:
+            pass  # Ignore any option errors at this point.
+
+        try:
+            settings.INSTALLED_APPS
+        except ImproperlyConfigured as exc:
+            self.settings_exception = exc
+        except ImportError as exc:
+            self.settings_exception = exc
+
+        if settings.configured:
+            # Start the auto-reloading dev server even if the code is broken.
+            # The hardcoded condition is a code smell but we can't rely on a
+            # flag on the command class because we haven't located it yet.
+            flask_djangofy.setup()
+            if self.operation != 'help':
+                try:
+                    self.__execute_command(*args, **vars(options))
+                except CommandError:
+                    self.__no_command_error()
+            else:
+                ShowHelp(arg_parser=parser).run()
 
 
 def execute_from_command_line(argv=None):
