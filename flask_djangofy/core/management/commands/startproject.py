@@ -1,8 +1,7 @@
 import os
 from binascii import hexlify
 
-from flask_djangofy.commands.base import BaseArgument
-
+from flask_djangofy.core.management.base import BaseArgument
 from flask_djangofy.core.management.templates import TemplateCommand
 
 
