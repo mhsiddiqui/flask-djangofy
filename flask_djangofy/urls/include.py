@@ -1,4 +1,4 @@
-from flask_djangofy.utils import ImportUtil
+from flask_djangofy.utils.module_loading import import_string
 
 
 class ModuleUrlIncluder(object):
@@ -19,7 +19,7 @@ class ModuleUrlIncluder(object):
         self.base = base
 
     def get_urls(self):
-        module_urls = ImportUtil('{namespace}.urlpatterns'.format(namespace=self.namespace), key_type='variable').get()
+        module_urls = import_string('{namespace}.urlpatterns'.format(namespace=self.namespace))
         for url in module_urls:
             url.set_base(self.base)
             url.set_app(self.app_name)

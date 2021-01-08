@@ -1,14 +1,8 @@
 DEFAULT_APP_RUNNER = 'flask_djangofy.core.runner.AppRunner'
 
 INITIALIZERS = [
-    'flask_djangofy.initializers.routes.RouteInitializer'
-]
 
-CMD_ACTIONS = {
-    'runserver': 'flask_djangofy.core.management.commands.RunServer',
-    # 'startproject': 'flask_djangofy.cmd.StartProject',
-    # 'startapp': 'flask_djangofy.cmd.StartApp'
-}
+]
 
 
 TIME_ZONE = 'America/Chicago'

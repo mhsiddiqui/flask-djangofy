@@ -1,18 +1,17 @@
 """
-Settings and configuration for Django.
+Settings and configuration for flask_djangofy.
 
 Read values from the module specified by the DJANGO_SETTINGS_MODULE environment
-variable, and then from django.conf.global_settings; see the global_settings.py
+variable, and then from flask_djangofy.conf.global_settings; see the global_settings.py
 for a list of all possible variables.
 """
-
+import importlib
 import os
 import time
 from pathlib import Path
 
 from flask_djangofy.conf import global_settings
 from flask_djangofy.core.exceptions import ImproperlyConfigured
-from flask_djangofy.utils.import_util import ImportUtil
 
 from flask_djangofy.utils.functional import LazyObject, empty
 
@@ -33,9 +32,9 @@ class SettingsReference(str):
 
 class LazySettings(LazyObject):
     """
-    A lazy proxy for either global Django settings or a custom settings object.
+    A lazy proxy for either global flask_djangofy settings or a custom settings object.
     The user can manually configure settings prior to using them. Otherwise,
-    Django uses the settings module pointed to by DJANGO_SETTINGS_MODULE.
+    flask_djangofy uses the settings module pointed to by DJANGO_SETTINGS_MODULE.
     """
     def _setup(self, name=None):
         """
@@ -117,7 +116,7 @@ class Settings:
         # store the settings module in case someone later cares
         self.SETTINGS_MODULE = settings_module
 
-        mod = ImportUtil(self.SETTINGS_MODULE).get()
+        mod = importlib.import_module(self.SETTINGS_MODULE)
 
         tuple_settings = (
             "INSTALLED_APPS",

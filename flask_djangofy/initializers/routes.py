@@ -1,11 +1,12 @@
+import sys
+
 from flask_djangofy.conf import settings
-from flask_djangofy.utils import ImportUtil
 
-from flask_djangofy import app
 from flask_djangofy.initializers.base import BaseInitializer
+from flask_djangofy.utils.module_loading import import_string
 
 
-class RouteInitializer(BaseInitializer):
+class Initializer(BaseInitializer):
     """
     Routes initialization class
     This class will start from base url defined in `ROOT_URLCONF` of your defined in your settings
@@ -36,8 +37,8 @@ class RouteInitializer(BaseInitializer):
         :return: list of urls
         :rtype list
         """
-        root_urls = ImportUtil('{root}.urlpatterns'.format(root=settings.ROOT_URLCONF), key_type='variable').get()
-        app.logger.info('{count} base urls found'.format(count=len(root_urls)))
+        root_urls = import_string('{root}.urlpatterns'.format(root=settings.ROOT_URLCONF))
+        sys.stdout.write(' * {count} base urls found\n'.format(count=len(root_urls)))
         return root_urls
 
     def __filter_by_app(self, urls):
@@ -59,7 +60,7 @@ class RouteInitializer(BaseInitializer):
         )
         for url in base_urls:
             self.urls.extend(url.get_urls())
-        app.logger.info('{count} total urls found'.format(count=len(self.urls)))
+        sys.stdout.write(' * {count} total urls found\n'.format(count=len(self.urls)))
 
     def initialize_routes(self):
         """

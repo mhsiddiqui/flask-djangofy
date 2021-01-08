@@ -52,3 +52,4 @@ class ImportUtil(object):
         :return: variable
         """
         return self.__import()
+

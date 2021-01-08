@@ -1,6 +1,11 @@
-from flask_djangofy.utils import ImportUtil
+import os
+import pkgutil
+from importlib import import_module
 
-from flask_djangofy import app
+import sys
+
+from flask_djangofy import app, BASE_PATH
+from flask_djangofy.apps import apps
 from flask_djangofy.conf import settings
 
 
@@ -15,13 +20,40 @@ class AppRunner(object):
         """
         self.kwargs = kwargs
 
+    def find_initializers(self, directory):
+        """
+        Find intializers under provided directory
+        :param directory: directory path
+        :return: list of initializers
+        """
+        initializers_dir = os.path.join(directory, 'initializers')
+        return [name for _, name, is_pkg in pkgutil.iter_modules([initializers_dir])
+                if not is_pkg and not name.startswith('_') and name != 'base']
+
+    def get_initializers(self):
+        """
+        Get all initializers in project
+        :return: list of initializers
+        """
+        commands = ['flask_djangofy.initializers.%s' % name for name in self.find_initializers(BASE_PATH)]
+        commands.extend(settings.INITIALIZERS)
+        for app_config in reversed(list(apps.get_app_configs())):
+            path = os.path.join(app_config.path, 'initializers')
+            commands.extend('%s.initializers.%s' % (app_config.name, name) for name in self.find_initializers(path))
+
+        return commands
+
     def before(self):
         """
         The function which will run before starting application server
         """
+        initializers = self.get_initializers()
         with app.app_context():
-            for initializer in settings.INITIALIZERS:
-                initializer_class = ImportUtil(initializer, key_type='class').get()
+            for index, initializer in enumerate(initializers):
+                sys.stdout.write('{index}: {initializer} initializing.\n'.format(
+                    index=index, initializer=initializer
+                ))
+                initializer_class = import_module(initializer).Initializer
                 initializer_class(**self.kwargs).initialize()
 
     def run(self):
@@ -49,4 +81,4 @@ class AppRunner(object):
         :return: app
         """
         self.before()
-        return app
+        return app.configure()

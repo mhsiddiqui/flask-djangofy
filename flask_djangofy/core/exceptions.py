@@ -2,6 +2,10 @@ class ImproperlyConfigured(Exception):
     """Flask is somehow improperly configured"""
     pass
 
+class AppRegistryNotReady(Exception):
+    """The flask_djangofy.apps registry is not populated yet"""
+    pass
+
 
 class CommandError(Exception):
     """

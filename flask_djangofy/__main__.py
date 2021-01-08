@@ -1,6 +1,6 @@
 """
-Invokes django-admin when the flask-djangofy module is run as a script.
-Example: python -m django check
+Invokes flask_djangofy-admin when the flask-djangofy module is run as a script.
+Example: python -m flask_djangofy check
 """
 from flask_djangofy.core import management
 

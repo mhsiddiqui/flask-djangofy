@@ -1,7 +1,6 @@
-from flask_djangofy.conf import settings
-from flask_djangofy.utils import ImportUtil
-
 import flask_djangofy
+from flask_djangofy.conf import settings
+from flask_djangofy.utils.module_loading import import_string
 
 
 def get_wsgi_application(load_only='all'):
@@ -12,5 +11,5 @@ def get_wsgi_application(load_only='all'):
     :return: wsgi app
     """
     flask_djangofy.setup()
-    runner_class = ImportUtil(settings.DEFAULT_APP_RUNNER, key_type='class').get()
+    runner_class = import_string(settings.DEFAULT_APP_RUNNER)
     return runner_class(load_only=load_only).get_app()

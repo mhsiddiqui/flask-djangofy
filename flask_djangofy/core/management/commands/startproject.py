@@ -1,44 +1,43 @@
 import os
+import re
+from flask_djangofy import BASE_PATH
 from binascii import hexlify
 
-from flask_djangofy.core.management.base import BaseArgument
+from flask_djangofy.core.exceptions import CommandError
 from flask_djangofy.core.management.templates import TemplateCommand
 
 
-class StartProject(TemplateCommand):
-    ARGUMENTS = [
-        BaseArgument(
-            '--name', help_text="Name of the project", required=True
-        )
-    ]
+class Command(TemplateCommand):
 
-    APP_NAME = 'flask_djangofy'
-
-    HELP_DATA = {
-        "title": "startproject",
-        "description": "Command to create project",
-        "usage": "python manage.py startproject --name=ProjectName",
-        "examples": [
-            "python manage.py startproject --name=MyProjectName"
-        ]
-    }
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
+        self.target_path = os.path.join(os.getcwd(), self.kwargs.get('name'))
 
     def validate(self):
-        if hasattr(self, 'name'):
-            return True
-        return False
+        if not re.match("^[a-zA-Z0-9_]*$", self.kwargs.get('name')):
+            raise CommandError("Name should only contains alphabets or _ or numeric")
+        if os.path.exists(self.target_path):
+            raise CommandError("%s already exists" % self.kwargs.get('name'))
 
     def run(self):
         templates = {
             'settings.txt': {
-                'secret_key': hexlify(os.urandom(20)),
+                'secret_key': hexlify(os.urandom(20)).decode(),
                 'project': self.kwargs.get('name')
             },
             'urls.txt': {},
-            'wsgi.txt': {}
+            'wsgi.txt': {'project': self.kwargs.get('name')}
         }
-        os.mk
         for template, data in templates.items():
-            jtemp = self.get_template(template, **data)
+            path = os.path.join(BASE_PATH, 'templates', self.command, template)
+            file_name = template.replace('txt', 'py')
+            template_data = self.get_template(path, **data)
+            self.generate(self.target_path, file_name, template_data)
+        self.generate(self.target_path, '__init__.py', '')
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--name', help="Name of the project", required=True
+        )
 
 

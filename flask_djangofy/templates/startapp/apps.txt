@@ -1,0 +1,5 @@
+from flask_djangofy.apps import AppConfig
+
+
+class {{config_name}}(AppConfig):
+    name = '{{app}}'

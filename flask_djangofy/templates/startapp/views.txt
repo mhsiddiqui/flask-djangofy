@@ -1,0 +1,1 @@
+from flask_djangofy.views import View
