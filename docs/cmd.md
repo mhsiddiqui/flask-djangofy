@@ -16,31 +16,47 @@ To start development server, run following command
 
 
 ## StartApp
-In Development
+```python manage.py startapp --name=APP_NAME```
+
+1. APP_NAME: Name of app. Name cannot contain space or any special character other than underscore.
 
 
 ## StartProject
-In Development
+```python manage.py startapp --name=PROJECT_NAME```
+
+1. PROJECT_NAME: Name of project. Name cannot contain space or any special character other than underscore.
 
 
 ## Adding Custom Command
-To add a new management command, write yur command class like this
+To do this, add a management/commands directory to the application. flask-djangofy will register a manage.py command for each Python module in that directory whose name doesn’t begin with an underscore. For example: 
 
 ```python
-from flask_djangofy.cmd.base import BaseCommand, BaseArgument
+app_name/
+    __init__.py
+    management/
+        commands/
+            _private.py
+            command_name.py
+    views.py
+```
 
-class MyCommand(BaseCommand):
-    ARGUMENTS = [
-        BaseArgument(
-            '--abc', short='-A', help_text="Help Text",
-            default='default'
-        )
-    ]
+n this example, the command_name command will be made available to any project that includes the app_name application in INSTALLED_APPS.
+
+The _private.py module will not be available as a management command.
+
+The command_name.py module has only one requirement – it must define a class Command that extends BaseCommand or one of its subclasses.
+
+
+```python
+from flask_djangofy.cmd.base import BaseCommand
+
+class Command(BaseCommand):
+
     def run(self):
         # your logic here
     
-    def show_help(self):
-        return "Your Help text here"
+    def add_arguments(self, parser):
+        # Add argument in parser
         
     def validate(self):
         # your validate logic here
@@ -48,16 +64,6 @@ class MyCommand(BaseCommand):
     
 ```
 
-After creating this class, add this in your settings file like this
-
-
-```python
-from flask_djangofy.conf import default_settings
-default_settings.CMD_ACTIONS.update({
-    'my_command': 'path.to.MyCommand'
-})
-
-```
 
 Now you can use your command like this
 

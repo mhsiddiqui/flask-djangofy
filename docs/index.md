@@ -8,7 +8,6 @@ Below are the features of flask-djangofy.
 
 1. URLS definition
 2. Views
-3. Command Line Interface for development server, creating project and creating app
-4. Custom initializers support
-5. Support for custom commands
+3. Management commands 
+4. Initializers
 

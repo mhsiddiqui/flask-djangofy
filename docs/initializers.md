@@ -10,14 +10,16 @@ Initializers are classes which run before running server. Default initializers a
 You can add new initializer by adding this in your settings file.
 
 ```python
-from flask_djangofy.conf import default_settings
+from flask_djangofy.conf import global_settings
 
 
-default_settings.INITIALIZERS.extend([
+global_settings.INITIALIZERS.extend([
     'path.to.your.InitializerClass'
 ])
 
 ```
+
+or if your initilizer is in your app, create `initializers` package in your app and flask_djangofy will pick it automatically.
 
 ## Writing custom initializer
 
@@ -27,9 +29,10 @@ You can write you custom initializer like this
 
 from flask_djangofy.initializers.base import BaseInitializer
 
-class YourInitializer(BaseInitializer):
+class Initializer(BaseInitializer):
     def initialize(self):
         pass
 ```
+*Name of class should be `Initializer`*
 
 Write you business logic in `initialize` function. Add this inializer in `INITIALIZERS` list. 
