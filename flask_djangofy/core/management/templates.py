@@ -14,9 +14,7 @@ import flask_djangofy
 from flask_djangofy.conf import settings
 from flask_djangofy.core.management.base import BaseCommand, CommandError
 from flask_djangofy.core.management.utils import handle_extensions
-# from flask_djangofy.template import Context, Engine
-# from flask_djangofy.utils import archive
-# from flask_djangofy.utils.version import get_docs_version
+from flask_djangofy.utils import archive
 
 
 class TemplateCommand(BaseCommand):
@@ -203,6 +201,8 @@ class TemplateCommand(BaseCommand):
                 absolute_path = self.download(template)
             else:
                 absolute_path = os.path.abspath(expanded_template)
+            if os.path.exists(absolute_path):
+                return self.extract(absolute_path)
 
         raise CommandError("couldn't handle %s template %s." %
                            (self.app_or_project, template))
@@ -303,6 +303,23 @@ class TemplateCommand(BaseCommand):
             ext = base[-4:] + ext
             base = base[:-4]
         return base, ext
+
+    def extract(self, filename):
+        """
+        Extract the given file to a temporary directory and return
+        the path of the directory with the extracted content.
+        """
+        prefix = 'django_%s_template_' % self.app_or_project
+        tempdir = tempfile.mkdtemp(prefix=prefix, suffix='_extract')
+        self.paths_to_remove.append(tempdir)
+        if self.verbosity >= 2:
+            self.stdout.write('Extracting %s' % filename)
+        try:
+            archive.extract(filename, tempdir)
+            return tempdir
+        except (archive.ArchiveException, OSError) as e:
+            raise CommandError("couldn't extract file %s to %s: %s" %
+                               (filename, tempdir, e))
 
     def is_url(self, template):
         """Return True if the name looks like a URL."""

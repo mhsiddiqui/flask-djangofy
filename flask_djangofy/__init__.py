@@ -25,7 +25,7 @@ class _AppSetup(object):
             from flask_djangofy.conf import settings
             from flask_djangofy.apps import apps
             apps.populate(settings.INSTALLED_APPS)
-            cls.app = Flask(settings.PROJECT_NAME or __name__)
+            cls.app = Flask( __name__)
             cls.app.config.from_object(settings)
 
 
