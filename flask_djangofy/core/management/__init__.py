@@ -1,15 +1,21 @@
-import argparse
+import functools
 import os
 import pkgutil
 import sys
+from argparse import (
+    _AppendConstAction, _CountAction, _StoreConstAction, _SubParsersAction,
+)
 from collections import defaultdict
+from difflib import get_close_matches
 from importlib import import_module
 
 import flask_djangofy
 from flask_djangofy.apps import apps
 from flask_djangofy.conf import settings
-from flask_djangofy.core.exceptions import CommandError, ImproperlyConfigured
-from flask_djangofy.core.management.base import handle_default_options, NO_COMMAND_ERROR, BaseCommand
+from flask_djangofy.core.exceptions import ImproperlyConfigured
+from flask_djangofy.core.management.base import (
+    BaseCommand, CommandError, CommandParser, handle_default_options,
+)
 from flask_djangofy.core.management.color import color_style
 
 
@@ -30,14 +36,15 @@ def load_command_class(app_name, name):
     (ImportError, AttributeError) to propagate.
     """
     module = import_module('%s.management.commands.%s' % (app_name, name))
-    return module.Command
+    return module.Command()
 
 
+@functools.lru_cache(maxsize=None)
 def get_commands():
     """
     Return a dictionary mapping command names to their callback applications.
 
-    Look for a management.commands package in flask_djangofy.core, and in each
+    Look for a management.commands package in django.core, and in each
     installed application -- if a commands package exists, register all
     commands in that package.
 
@@ -67,33 +74,120 @@ def get_commands():
     return commands
 
 
-class ManagementUtility(object):
+def call_command(command_name, *args, **options):
     """
-    Encapsulate the logic of the flask-djangofy and manage.py utilities.
-    """
+    Call the given command, with the given options and args/kwargs.
 
+    This is the primary API you should use for calling specific commands.
+
+    `command_name` may be a string or a command object. Using a string is
+    preferred unless the command object is required for further processing or
+    testing.
+
+    Some examples:
+        call_command('startapp')
+
+        from django.core.management.commands import runserver
+        cmd = runserver.Command()
+        call_command(cmd, verbosity=0, interactive=False)
+        # Do something with cmd ...
+    """
+    if isinstance(command_name, BaseCommand):
+        # Command object passed in.
+        command = command_name
+        command_name = command.__class__.__module__.split('.')[-1]
+    else:
+        # Load the command object by name.
+        try:
+            app_name = get_commands()[command_name]
+        except KeyError:
+            raise CommandError("Unknown command: %r" % command_name)
+
+        if isinstance(app_name, BaseCommand):
+            # If the command is already loaded, use it directly.
+            command = app_name
+        else:
+            command = load_command_class(app_name, command_name)
+
+    # Simulate argument parsing to get the option defaults (see #10080 for details).
+    parser = command.create_parser('', command_name)
+    # Use the `dest` option name from the parser option
+    opt_mapping = {
+        min(s_opt.option_strings).lstrip('-').replace('-', '_'): s_opt.dest
+        for s_opt in parser._actions if s_opt.option_strings
+    }
+    arg_options = {opt_mapping.get(key, key): value for key, value in options.items()}
+    parse_args = []
+    for arg in args:
+        if isinstance(arg, (list, tuple)):
+            parse_args += map(str, arg)
+        else:
+            parse_args.append(str(arg))
+
+    def get_actions(parser):
+        # Parser actions and actions from sub-parser choices.
+        for opt in parser._actions:
+            if isinstance(opt, _SubParsersAction):
+                for sub_opt in opt.choices.values():
+                    yield from get_actions(sub_opt)
+            else:
+                yield opt
+
+    parser_actions = list(get_actions(parser))
+    mutually_exclusive_required_options = {
+        opt
+        for group in parser._mutually_exclusive_groups
+        for opt in group._group_actions if group.required
+    }
+    # Any required arguments which are passed in via **options must be passed
+    # to parse_args().
+    for opt in parser_actions:
+        if (
+            opt.dest in options and
+            (opt.required or opt in mutually_exclusive_required_options)
+        ):
+            parse_args.append(min(opt.option_strings))
+            if isinstance(opt, (_AppendConstAction, _CountAction, _StoreConstAction)):
+                continue
+            value = arg_options[opt.dest]
+            if isinstance(value, (list, tuple)):
+                parse_args += map(str, value)
+            else:
+                parse_args.append(str(value))
+    defaults = parser.parse_args(args=parse_args)
+    defaults = dict(defaults._get_kwargs(), **arg_options)
+    # Raise an error if any unknown options were passed.
+    stealth_options = set(command.base_stealth_options + command.stealth_options)
+    dest_parameters = {action.dest for action in parser_actions}
+    valid_options = (dest_parameters | stealth_options).union(opt_mapping)
+    unknown_options = set(options) - valid_options
+    if unknown_options:
+        raise TypeError(
+            "Unknown option(s) for %s command: %s. "
+            "Valid options are: %s." % (
+                command_name,
+                ', '.join(sorted(unknown_options)),
+                ', '.join(sorted(valid_options)),
+            )
+        )
+    # Move positional args out of options to mimic legacy optparse
+    args = defaults.pop('args', ())
+    if 'skip_checks' not in options:
+        defaults['skip_checks'] = True
+
+    return command.execute(*args, **defaults)
+
+
+class ManagementUtility:
+    """
+    Encapsulate the logic of the flask-djangofy-admin and manage.py utilities.
+    """
     def __init__(self, argv=None):
         self.argv = argv or sys.argv[:]
-        self.operation = 'help'
         self.prog_name = os.path.basename(self.argv[0])
+        if self.prog_name == '__main__.py':
+            self.prog_name = 'python -m django'
         self.settings_exception = None
-
-    def __set_operation(self):
-        """
-        Set operation
-        """
-        try:
-            self.operation = self.argv[1]
-            self.argv.append('--command={}'.format(self.operation))
-        except IndexError:
-            pass
-
-    def __no_command_error(self):
-        """
-        Error in case of no command found
-        """
-        error_message = NO_COMMAND_ERROR.format(operation=self.operation)
-        sys.stdout.write(error_message)
 
     def main_help_text(self, commands_only=False):
         """Return the script's main help text, as a string."""
@@ -108,8 +202,8 @@ class ManagementUtility(object):
             ]
             commands_dict = defaultdict(lambda: [])
             for name, app in get_commands().items():
-                if app == 'flask_djangofy.core':
-                    app = 'flask_djangofy'
+                if app == 'django.core':
+                    app = 'django'
                 else:
                     app = app.rpartition('.')[-1]
                 commands_dict[app].append(name)
@@ -128,63 +222,129 @@ class ManagementUtility(object):
 
         return '\n'.join(usage)
 
-    def __fetch_command(self):
+    def fetch_command(self, subcommand):
         """
         Try to fetch the given subcommand, printing a message with the
         appropriate command called from the command line (usually
-        "flask_djangofy-admin" or "manage.py") if it can't be found.
+        "django-admin" or "manage.py") if it can't be found.
         """
         # Get commands outside of try block to prevent swallowing exceptions
         commands = get_commands()
         try:
-            app_name = commands[self.operation]
+            app_name = commands[subcommand]
         except KeyError:
-            if os.environ.get('APP_SETTINGS_MODULE'):
+            if os.environ.get('FLASK_SETTINGS_MODULE'):
                 # If `subcommand` is missing due to misconfigured settings, the
                 # following line will retrigger an ImproperlyConfigured exception
                 # (get_commands() swallows the original one) so the user is
                 # informed about it.
                 settings.INSTALLED_APPS
             elif not settings.configured:
-                sys.stderr.write("No flask_djangofy settings specified.\n")
+                sys.stderr.write("No flask-djangofy settings specified.\n")
+            possible_matches = get_close_matches(subcommand, commands)
+            sys.stderr.write('Unknown command: %r' % subcommand)
+            if possible_matches:
+                sys.stderr.write('. Did you mean %s?' % possible_matches[0])
             sys.stderr.write("\nType '%s help' for usage.\n" % self.prog_name)
             sys.exit(1)
         if isinstance(app_name, BaseCommand):
             # If the command is already loaded, use it directly.
             klass = app_name
         else:
-            klass = load_command_class(app_name, self.operation)
+            klass = load_command_class(app_name, subcommand)
         return klass
 
-    def __execute_command(self):
+    def autocomplete(self):
         """
-        Execute command
-        :param args: arguments required by command
-        :param options: keyword arguments
-        """
-        command_class = self.__fetch_command()()
-        argument_parser = argparse.ArgumentParser(
-            usage='manage.py operation [options] [args]',
-            add_help=False, allow_abbrev=False
-        )
-        argument_parser.add_argument('--command')
-        argument_parser.add_argument('--settings')
-        argument_parser.add_argument('--pythonpath')
+        Output completion suggestions for BASH.
 
-        command_class.add_arguments(argument_parser)
+        The output of this function is passed to BASH's `COMREPLY` variable and
+        treated as completion suggestions. `COMREPLY` expects a space
+        separated string as the result.
+
+        The `COMP_WORDS` and `COMP_CWORD` BASH environment variables are used
+        to get information about the cli input. Please refer to the BASH
+        man-page for more information about this variables.
+
+        Subcommand options are saved as pairs. A pair consists of
+        the long option string (e.g. '--exclude') and a boolean
+        value indicating if the option requires arguments. When printing to
+        stdout, an equal sign is appended to options which require arguments.
+
+        Note: If debugging this function, it is recommended to write the debug
+        output in a separate file. Otherwise the debug output will be treated
+        and formatted as potential completion suggestions.
+        """
+        # Don't complete if user hasn't sourced bash_completion file.
+        if 'FLASK_AUTO_COMPLETE' not in os.environ:
+            return
+
+        cwords = os.environ['COMP_WORDS'].split()[1:]
+        cword = int(os.environ['COMP_CWORD'])
+
         try:
-            options, args = argument_parser.parse_known_args(self.argv[2:])
-            handle_default_options(options)
-        except CommandError:
-            pass  # Ignore any option errors at this point.
+            curr = cwords[cword - 1]
+        except IndexError:
+            curr = ''
 
-        command_class.execute(*args, **vars(options))
+        subcommands = [*get_commands(), 'help']
+        options = [('--help', False)]
+
+        # subcommand
+        if cword == 1:
+            print(' '.join(sorted(filter(lambda x: x.startswith(curr), subcommands))))
+        # subcommand options
+        # special case: the 'help' subcommand has no options
+        elif cwords[0] in subcommands and cwords[0] != 'help':
+            subcommand_cls = self.fetch_command(cwords[0])
+            # special case: add the names of installed apps to options
+            parser = subcommand_cls.create_parser('', cwords[0])
+            options.extend(
+                (min(s_opt.option_strings), s_opt.nargs != 0)
+                for s_opt in parser._actions if s_opt.option_strings
+            )
+            # filter out previously specified options from available options
+            prev_opts = {x.split('=')[0] for x in cwords[1:cword - 1]}
+            options = (opt for opt in options if opt[0] not in prev_opts)
+
+            # filter options by current input
+            options = sorted((k, v) for k, v in options if k.startswith(curr))
+            for opt_label, require_arg in options:
+                # append '=' to options which require args
+                if require_arg:
+                    opt_label += '='
+                print(opt_label)
+        # Exit code of the bash completion function is never passed back to
+        # the user, so it's safe to always exit with 0.
+        sys.exit(0)
 
     def execute(self):
         """
-        Execute a command
+        Given the command-line arguments, figure out which subcommand is being
+        run, create a parser appropriate to that command, and run it.
         """
-        self.__set_operation()
+        try:
+            subcommand = self.argv[1]
+        except IndexError:
+            subcommand = 'help'  # Display help if no arguments were given.
+
+        # Preprocess options to extract --settings and --pythonpath.
+        # These options could affect the commands that are available, so they
+        # must be processed early.
+        parser = CommandParser(
+            prog=self.prog_name,
+            usage='%(prog)s subcommand [options] [args]',
+            add_help=False,
+            allow_abbrev=False,
+        )
+        parser.add_argument('--settings')
+        parser.add_argument('--pythonpath')
+        parser.add_argument('args', nargs='*')  # catch-all
+        try:
+            options, args = parser.parse_known_args(self.argv[2:])
+            handle_default_options(options)
+        except CommandError:
+            pass  # Ignore any option errors at this point.
 
         try:
             settings.INSTALLED_APPS
@@ -197,14 +357,47 @@ class ManagementUtility(object):
             # Start the auto-reloading dev server even if the code is broken.
             # The hardcoded condition is a code smell but we can't rely on a
             # flag on the command class because we haven't located it yet.
-            flask_djangofy.setup()
-            if self.operation != 'help':
+            if subcommand == 'runserver' and '--noreload' not in self.argv:
                 try:
-                    self.__execute_command()
-                except CommandError:
-                    raise
+                    flask_djangofy.setup()
+                except Exception:
+                    # The exception will be raised later in the child process
+                    # started by the autoreloader. Pretend it didn't happen by
+                    # loading an empty list of applications.
+                    apps.all_models = defaultdict(dict)
+                    apps.app_configs = {}
+                    apps.apps_ready = apps.models_ready = apps.ready = True
+
+                    # Remove options not compatible with the built-in runserver
+                    # (e.g. options for the contrib.staticfiles' runserver).
+                    # Changes here require manually testing as described in
+                    # #27522.
+                    _parser = self.fetch_command('runserver').create_parser('flask_djangofy', 'runserver')
+                    _options, _args = _parser.parse_known_args(self.argv[2:])
+                    for _arg in _args:
+                        self.argv.remove(_arg)
+
+            # In all other cases, flask_djangofy.setup() is required to succeed.
             else:
+                flask_djangofy.setup()
+
+        self.autocomplete()
+
+        if subcommand == 'help':
+            if '--commands' in args:
+                sys.stdout.write(self.main_help_text(commands_only=True) + '\n')
+            elif not options.args:
                 sys.stdout.write(self.main_help_text() + '\n')
+            else:
+                self.fetch_command(options.args[0]).print_help(self.prog_name, options.args[0])
+        # Special-cases: We want 'flask-djangofy-admin --version' and
+        # 'flask-djangofy-admin --help' to work, for backwards compatibility.
+        elif subcommand == 'version' or self.argv[1:] == ['--version']:
+            sys.stdout.write(flask_djangofy.get_version() + '\n')
+        elif self.argv[1:] in (['--help'], ['-h']):
+            sys.stdout.write(self.main_help_text() + '\n')
+        else:
+            self.fetch_command(subcommand).run_from_argv(self.argv)
 
 
 def execute_from_command_line(argv=None):

@@ -1,5 +1,0 @@
-from flask_djangofy.urls import path, include
-
-urlpatterns = [
-    # Write your urls here
-]

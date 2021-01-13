@@ -15,7 +15,7 @@ from flask_djangofy.core.exceptions import ImproperlyConfigured
 
 from flask_djangofy.utils.functional import LazyObject, empty
 
-ENVIRONMENT_VARIABLE = "APP_SETTINGS_MODULE"
+ENVIRONMENT_VARIABLE = "FLASK_SETTINGS_MODULE"
 
 
 class SettingsReference(str):

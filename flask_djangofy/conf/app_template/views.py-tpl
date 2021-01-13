@@ -1,1 +1,3 @@
 from flask_djangofy.views import View
+
+# Create your views here.
