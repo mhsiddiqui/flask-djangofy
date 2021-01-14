@@ -80,7 +80,7 @@ class Initializer(BaseInitializer):
         """
         All all routes rule in flask app
         """
-        if not self.urls:
+        if not self.urls and settings.DEBUG:
             from flask_djangofy.urls import path
             path('/', default_urlconf).initialize()
         else:
