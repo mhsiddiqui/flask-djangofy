@@ -87,7 +87,7 @@ def call_command(command_name, *args, **options):
     Some examples:
         call_command('startapp')
 
-        from django.core.management.commands import runserver
+        from flask_djangofy.core.management.commands import runserver
         cmd = runserver.Command()
         call_command(cmd, verbosity=0, interactive=False)
         # Do something with cmd ...

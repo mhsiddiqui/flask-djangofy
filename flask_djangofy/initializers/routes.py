@@ -1,9 +1,23 @@
+import os
 import sys
 
 from flask_djangofy.conf import settings
 
 from flask_djangofy.initializers.base import BaseInitializer
 from flask_djangofy.utils.module_loading import import_string
+
+
+def default_urlconf():
+    """Create an empty URLconf 404 error response."""
+    import flask_djangofy
+    from jinja2 import Template
+    with open(os.path.join(flask_djangofy.__path__[0], 'templates', 'default_urlconf.html'), 'r+') as f:
+        content = f.read()
+    template = Template(content)
+    context = {
+        'version': flask_djangofy.get_version()
+    }
+    return template.render(**context)
 
 
 class Initializer(BaseInitializer):
@@ -66,8 +80,13 @@ class Initializer(BaseInitializer):
         """
         All all routes rule in flask app
         """
-        for url in self.urls:
-            url.initialize()
+        if not self.urls:
+            from flask_djangofy.urls import path
+            path('/', default_urlconf).initialize()
+        else:
+            for url in self.urls:
+                url.initialize()
+
 
     def initialize(self):
         """
