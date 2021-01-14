@@ -3,6 +3,8 @@ envname/
 venv/
 .idea/
 .DS_Store
+*.html
+!flask_djangofy/templates/*html
 *.pyc
 *.egg-info/*
 *.swp
