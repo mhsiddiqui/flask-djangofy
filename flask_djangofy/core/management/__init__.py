@@ -186,7 +186,7 @@ class ManagementUtility:
         self.argv = argv or sys.argv[:]
         self.prog_name = os.path.basename(self.argv[0])
         if self.prog_name == '__main__.py':
-            self.prog_name = 'python -m django'
+            self.prog_name = 'python -m flask-djangofy'
         self.settings_exception = None
 
     def main_help_text(self, commands_only=False):
@@ -202,8 +202,8 @@ class ManagementUtility:
             ]
             commands_dict = defaultdict(lambda: [])
             for name, app in get_commands().items():
-                if app == 'django.core':
-                    app = 'django'
+                if app == 'flask-djangofy.core':
+                    app = 'flask-djangofy'
                 else:
                     app = app.rpartition('.')[-1]
                 commands_dict[app].append(name)
@@ -216,7 +216,7 @@ class ManagementUtility:
             # Output an extra note if settings are not properly configured
             if self.settings_exception is not None:
                 usage.append(style.NOTICE(
-                    "Note that only Django core commands are listed "
+                    "Note that only flask-djangofy core commands are listed "
                     "as settings are not properly configured (error: %s)."
                     % self.settings_exception))
 
@@ -226,7 +226,7 @@ class ManagementUtility:
         """
         Try to fetch the given subcommand, printing a message with the
         appropriate command called from the command line (usually
-        "django-admin" or "manage.py") if it can't be found.
+        "flask-djangofy-admin" or "manage.py") if it can't be found.
         """
         # Get commands outside of try block to prevent swallowing exceptions
         commands = get_commands()

@@ -104,7 +104,7 @@ class TemplateCommand(BaseCommand):
             base_name: name,
             base_directory: top_dir,
             camel_case_name: camel_case_value,
-            'flask_djangf_version': flask_djangofy.__version__,
+            'flask_djangofy_version': flask_djangofy.__version__,
         }
 
         # Setup a stub settings environment for template rendering
