@@ -3,7 +3,6 @@ envname/
 venv/
 .idea/
 .DS_Store
-*.html
 *.pyc
 *.egg-info/*
 *.swp
