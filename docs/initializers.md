@@ -1,8 +1,8 @@
 # Initializers
 
-Initializers are classes which run before running server. Default initializers are
+Initializers are classes which run before running server. Default initializes are
 
-1. Route initlizer
+1. Route initialize
 
 
 ## Adding new initializer
@@ -19,7 +19,7 @@ global_settings.INITIALIZERS.extend([
 
 ```
 
-or if your initilizer is in your app, create `initializers` package in your app and flask_djangofy will pick it automatically.
+or if your initializer is in your app, create `initializers` package in your app and flask_djangofy will pick it automatically.
 
 ## Writing custom initializer
 
@@ -33,6 +33,6 @@ class Initializer(BaseInitializer):
     def initialize(self):
         pass
 ```
-*Name of class should be `Initializer`*
+*Name of class should be `Initializer`
 
-Write you business logic in `initialize` function. Add this inializer in `INITIALIZERS` list. 
+Write you business logic in `initialize` function. Add this initializer in `INITIALIZERS` list. 

@@ -84,5 +84,9 @@ class Command(BaseCommand):
 
     def run(self, **options):
         """Run the server, using the autoreloader if needed."""
+        options.update({
+            'port': self.port,
+            'host': self.addr
+        })
         runner_class = import_string(settings.DEFAULT_APP_RUNNER)
         runner_class(**options).run()

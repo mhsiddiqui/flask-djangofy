@@ -1,31 +1,52 @@
-# Command Line Interface
+# Command Line Interface (flask-djangofy-admin and manage.py)
 
 The command line interface of flask-djangofy is designed to use it in similar way as it is used in Django. It can used in following ways.
 
-```python manage.py operation arguments```
+flask-djangofy-admin is flask-djangofy’s command-line utility for administrative tasks. This document outlines all it can do.
 
+In addition, manage.py is automatically created in each flask-djangofy project. It does the same thing as flask-djangofy-admin but also sets the FLASK_SETTINGS_MODULE environment variable so that it points to your project’s settings.py file.
 
-## Runserver
-To start development server, run following command
+The flask-djangofy-admin script should be on your system path if you installed flask-djangofy via pip. If it’s not in your path, ensure you have your virtual environment activated.
 
-```python manage.py runserver --port=your_port --host=your_host --load_only=app_name```
- 
-1. PORT: Any port. Default is 5000
-2. HOST: IP of server. Default is 127.0.0.1
-3. Load Only: Name of App. In case your want to serve only a specific app. Default is all
+Generally, when working on a single flask-djangofy project, it’s easier to use manage.py than flask-djangofy-admin. If you need to switch between multiple flask-djangofy settings files, use flask-djangofy-admin with FLASK_SETTINGS_MODULE or the --settings command line option.
 
+The command-line examples throughout this document use flask-djangofy-admin to be consistent, but any example can use manage.py or python -m flask_djangofy just as well.
 
-## StartApp
-```python manage.py startapp --name=APP_NAME```
+## Usage
 
-1. APP_NAME: Name of app. Name cannot contain space or any special character other than underscore.
+```bash
+$ flask-djangofy-admin <command> [options]
+$ manage.py <command> [options]
+$ python -m flask_djangofy <command> [options]
+```
 
+command should be one of the commands listed in this document. options, which is optional, should be zero or more of the options available for the given command.
 
-## StartProject
-```python manage.py startapp --name=PROJECT_NAME```
+### Getting runtime help
 
-1. PROJECT_NAME: Name of project. Name cannot contain space or any special character other than underscore.
+Run **flask-djangofy-admin help** to display usage information and a list of the commands provided by each application.
 
+Run **flask-djangofy-admin help --commands** to display a list of all available commands.
+
+Run **flask-djangofy-admin help <command>** to display a description of the given command and a list of its available options.
+
+## runserver
+> flask-djangofy-admin runserver [addrport]
+
+Starts a lightweight development Web server on the local machine. By default, the server runs on port 8000 on the IP address 127.0.0.1. You can pass in an IP address and port number explicitly.
+
+## startApp
+> flask-djangofy-admin startapp name [directory]
+
+Creates a flask-djangofy app directory structure for the given app name in the current directory or the given destination.
+
+## startproject
+
+> flask-djangofy-admin startproject name [directory]
+
+Creates a flask-djangofy project directory structure for the given project name in the current directory or the given destination.
+
+By default, the new directory contains manage.py and a project package (containing a settings.py and other files).
 
 ## Adding Custom Command
 To do this, add a management/commands directory to the application. flask-djangofy will register a manage.py command for each Python module in that directory whose name doesn’t begin with an underscore. For example: 
@@ -48,20 +69,16 @@ The command_name.py module has only one requirement – it must define a class C
 
 
 ```python
-from flask_djangofy.cmd.base import BaseCommand
+from flask_djangofy.core.management.base import BaseCommand, CommandError
 
 class Command(BaseCommand):
+    help = 'Your help text here'
 
-    def run(self):
-        # your logic here
-    
     def add_arguments(self, parser):
-        # Add argument in parser
-        
-    def validate(self):
-        # your validate logic here
-    
-    
+        # add arguments here
+
+    def handle(self, *args, **options):
+        # add your logic here
 ```
 
 
