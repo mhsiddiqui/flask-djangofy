@@ -35,13 +35,13 @@ class AppRunner(object):
         Get all initializers in project
         :return: list of initializers
         """
-        commands = ['flask_djangofy.initializers.%s' % name for name in self.find_initializers(BASE_PATH)]
-        commands.extend(settings.INITIALIZERS)
+        initializer = ['flask_djangofy.initializers.%s' % name for name in self.find_initializers(BASE_PATH)]
+        initializer.extend(settings.INITIALIZERS)
         for app_config in reversed(list(apps.get_app_configs())):
             path = os.path.join(app_config.path, 'initializers')
-            commands.extend('%s.initializers.%s' % (app_config.name, name) for name in self.find_initializers(path))
+            initializer.extend('%s.initializers.%s' % (app_config.name, name) for name in self.find_initializers(path))
 
-        return commands
+        return initializer
 
     def before(self):
         """
