@@ -9,11 +9,11 @@ Install it by running below command.
 
 ## Step # 2: Create Project
 Run following command to create your project
-> `python manage.py startproject YOUR_PROJECT_NAME`
+> `flask-djangofy-admin startproject YOUR_PROJECT_NAME`
 
 ## Step # 3: Create Apps
 Run following command to create app
-> `python manage.py startproject YOUR_APP_NAME`
+> `python manage.py startapp YOUR_APP_NAME`
 
 You will need to add app in `INSTALLED_APPS` in `YOUR_PROJECT_NAME/settings.py` just like Django.
 
